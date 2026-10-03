@@ -19,3 +19,7 @@ The catalog contains two Italian classics with learning excerpts and approximate
 `lib/catalog.ts` defines separate song records, lyric lines containing word IDs, timing records keyed by line ID, English line translations, and dictionary entries containing lemmas and grammatical information. D1's vocabulary table has a composite user/word key with status, encounter count and update time. Adding a licensed lyrics provider or larger catalog does not require changing the progress schema. API requests validate dictionary IDs, require server-side identity, check write origin and use prepared statements.
 
 Photography: Bjorn Snelders and Laurenz Kleinheider / Unsplash. Source links are in Learning settings. Streaming sources: Tony Sandler’s Santa Lucia and Luciano Pavarotti’s official La donna è mobile audio on YouTube.
+
+## Playback and feed update
+
+The app now opens in YouTube streaming mode. Tap Play song to start audio. Native vertical scrolling snaps between full-height cards and transfers playback to the active song. Silent practice remains available on desktop. The second recording was replaced with an embeddable performance after error 150 was observed during testing.
