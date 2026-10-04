@@ -1,0 +1,9 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import {validLearning} from '../lib/discovery.ts';
+import {sqlString} from './catalog-tools.mjs';
+const [input,output,duration]=process.argv.slice(2);if(!input||!output||!duration)throw new Error('Usage: node scripts/import-learning.mjs package.json output.sql recording-duration-ms');
+const pack=JSON.parse(await readFile(input,'utf8'));if(!validLearning(pack,pack.recordingId,Number(duration)))throw new Error('Learning package has invalid rights, timing, text or token boundaries.');
+const sql=['PRAGMA foreign_keys=ON;','BEGIN TRANSACTION;'];const v=values=>values.map(sqlString).join(',');
+sql.push(`INSERT INTO learning_packages(id,recording_id,version,rights_json,approved) VALUES (${v([pack.id,pack.recordingId,pack.version,JSON.stringify(pack.rights),0])}) ON CONFLICT(id) DO NOTHING;`);
+for(const [ordinal,line] of pack.lines.entries()){sql.push(`INSERT INTO lyric_lines(id,package_id,ordinal,text) VALUES (${v([line.id,pack.id,ordinal,line.text])}) ON CONFLICT(id) DO NOTHING;`,`INSERT INTO lyric_timings(line_id,start_ms,end_ms) VALUES (${v([line.id,line.startMs,line.endMs])}) ON CONFLICT(line_id) DO NOTHING;`,`INSERT INTO line_translations(line_id,text) VALUES (${v([line.id,line.translation])}) ON CONFLICT(line_id) DO NOTHING;`);for(const [i,token] of line.tokens.entries()){const s=token.sense;if(s)sql.push(`INSERT INTO word_senses(id,text,translation,lemma,grammar) VALUES (${v([s.id,s.text,s.translation,s.lemma,s.grammar])}) ON CONFLICT(id) DO NOTHING;`);sql.push(`INSERT INTO word_occurrences(line_id,ordinal,surface,sense_id) VALUES (${v([line.id,i,token.surface,s?.id||null])}) ON CONFLICT(line_id,ordinal) DO NOTHING;`);}}
+sql.push('COMMIT;');await writeFile(output,sql.join('\n'));console.log('Learning draft exported. Owner review is required before approval.');
