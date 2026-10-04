@@ -12,7 +12,7 @@ export async function GET(request: Request, { params }: Context) {
         const { action } = await params;
         if (action === 'status') {
             const row = await db().prepare('SELECT expires_at FROM spotify_connections WHERE user_id=?').bind(u.userId).first();
-            return json({ configured: ready(), connected: !!row, learningEnabled: config().SPOTIFY_LEARNING_APPROVED === 'true' });
+            return json({ configured: ready(), connected: !!row, catalogOwner: config().CATALOG_OWNER_ID === u.userId, learningEnabled: config().SPOTIFY_LEARNING_APPROVED === 'true' });
         }
         if (action === 'token') {
             return json({ accessToken: await accessToken(u.userId) });
