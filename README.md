@@ -23,3 +23,7 @@ Photography: Bjorn Snelders and Laurenz Kleinheider / Unsplash. Source links are
 ## Playback and feed update
 
 The app now opens in YouTube streaming mode. Tap Play song to start audio. Native vertical scrolling snaps between full-height cards and transfers playback to the active song. Silent practice remains available on desktop. The second recording was replaced with an embeddable performance after error 150 was observed during testing.
+
+## Audio-only listening
+
+The lyrics feed now uses externally hosted Internet Archive MP3 streams, without a YouTube player or video. No audio files are saved in the app. The catalog uses Titta Ruffo's Santa Lucia (1923) and Enrico Caruso's La donna è mobile (1908); source URLs are attached to each song. HTMLAudioElement playback events and currentTime drive the lyric clock, play/pause, seeking, speed and volume. Swipe/scroll changes the active stream and pauses the previous one. One initial play gesture is required by browser autoplay rules. Lyrics remain learning excerpts with approximate timestamps.
