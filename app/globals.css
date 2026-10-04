@@ -63,3 +63,26 @@
 .settings a{color:var(--accent);text-decoration:underline}
 @media(max-width:360px){.feed-card .player-bar{padding-left:20px;padding-right:20px}.mini-track h2{font-size:18px}.feed-card .song-stage{padding-left:22px;padding-right:22px}.feed-card .transport-buttons{gap:5px}}
 @media(max-height:720px){.feed-card .song-stage{padding-top:76px;padding-bottom:290px}.feed-card .lyrics,.feed-card:not(.current-card) .lyrics{padding:12px 0;gap:16px}.feed-card .lyric-line:not(.active){display:none}.feed-card .lyrics-status{display:flex}.feed-card .stage-top{display:flex}.feed-card .swipe-hint{bottom:270px}.feed-card .player-bar{padding-top:12px;padding-bottom:8px}.feed-card .italian-line button{font-size:27px}.feed-card .translation{font-size:14px}}
+
+/* Compact dock: preserve touch targets while removing stacked labels and gaps. */
+.feed-card .player-bar{bottom:calc(52px + env(safe-area-inset-bottom));padding:10px 24px 8px;border-radius:16px 16px 0 0}
+.feed-card .mini-track{gap:10px}
+.feed-card .mini-track>img{width:36px;height:36px;border-radius:6px}
+.mini-track h2{font-size:17px;line-height:1.25;letter-spacing:-.3px}
+.mini-track p{font-size:12px;margin-top:2px}
+.feed-card .seek{display:grid;grid-template-columns:30px minmax(0,1fr) 30px;align-items:center;gap:8px;margin:0}
+.time-label{font-size:10px;font-variant-numeric:tabular-nums;color:#bcc5b6;min-width:0}
+.time-label:last-child{text-align:right}
+.control-row{margin-top:0;gap:6px}
+.feed-card .transport-buttons{gap:8px}
+.feed-card .transport-buttons>button:not(.play-button){height:44px}
+.feed-card .transport-buttons .play-button{width:48px;height:48px}
+.feed-card .translation-control{width:48px;height:44px;gap:1px}
+.volume-control{height:44px}
+.mobile-nav{height:calc(52px + env(safe-area-inset-bottom))}
+.mobile-nav button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;font-size:11px}
+.mobile-nav button svg{width:18px;height:18px}
+.feed-card .song-stage{padding-bottom:235px}
+.feed-card .swipe-hint{bottom:214px}
+@media(max-width:360px){.feed-card .player-bar{padding-left:20px;padding-right:20px}.mini-track h2{font-size:16px}.feed-card .transport-buttons{gap:5px}}
+@media(max-height:720px){.feed-card .song-stage{padding-bottom:235px}.feed-card .swipe-hint{bottom:214px}.feed-card .player-bar{padding-top:10px;padding-bottom:8px}}

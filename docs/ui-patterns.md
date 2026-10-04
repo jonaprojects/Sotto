@@ -9,3 +9,7 @@ Reviewed 4 October 2026 against primary product and accessibility documentation.
 - Native vertical scroll snapping remains the primary feed navigation. Visible hints, previous/next controls and arrow-key navigation provide alternatives. Reduced-motion preferences disable smooth transitions; safe-area padding protects controls on phones.
 
 These are design choices informed by these references, not a claim of full accessibility conformance. The demo uses approximate lyric timestamps and historical streaming recordings.
+
+## Compact footer refinement
+
+The bottom dock uses smaller artwork and track typography, inline timeline labels, a 48-pixel Play button, and horizontal navigation labels. It removes vertical spacing rather than shrinking touch targets below 44 pixels. At a 390 × 844 viewport, the player and navigation occupy approximately 202 pixels together, down from approximately 266 pixels in the previous layout. Lyric and swipe-hint spacing reserves the reduced footer height, including device safe-area insets. Verified at 320 × 667 and 390 × 844 with streaming playback and vertical song changes.
