@@ -55,6 +55,9 @@ export type LearningLine = {
     }[];
 };
 export type LearningPackage = {
+    translationProvider?: string;
+    translationStatus?: 'pending' | 'ready';
+    source?: { provider: string; url: string; permissionStatus: string };
     id: string;
     recordingId: string;
     version: number;

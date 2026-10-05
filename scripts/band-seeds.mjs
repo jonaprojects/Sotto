@@ -1,0 +1,20 @@
+// Editorial discovery sources. Language approval is a separate prototype step.
+export const bandSeeds = [
+ {name:'Måneskin',genre:'rock',spotifyId:'0lAWpj5szCSwM4rUMHYmrr',source:'https://www.sonymusic.it/artisti-epic-ita/maneskin/',albums:['Il ballo della vita',"Teatro d'ira - Vol. I",'RUSH!','Chosen'],allow:['ZITTI E BUONI','CORALINE','VENT’ANNI','LA PAURA DEL BUIO','LIVIDI SUI GOMITI','IN NOME DEL PADRE','Torna a casa','Morirò da re','Le parole lontane',"L'altra dimensione",'Niente da dire','Lasciami stare','Immortale','La paura del buio','Il dono della vita','Mark Chapman','La fine','Vengo dalla luna']},
+ {name:'Pinguini Tattici Nucleari',spotifyId:'6RdcIWVKYYzNzjQRd3oyHS',genre:'indie',albums:['Fake News',"Fuori dall’Hype",'AHIA!'],source:'https://www.sonymusic.it/artisti-epic-ita/pinguini-tattici-nucleari/'},
+ {name:'Negrita',spotifyId:'0Tuudqq2NACRXkvTQGazY2',genre:'rock',albums:['Dannato Vivere','9'],exclude:['Junkie Beat','Bonjour','Baby I’m in love','Que será, será'],source:'https://www.negrita.com/album/dannato-vivere/'},
+ {name:'Baustelle',spotifyId:'02G0wSA5mAINnHX3nTCaHi',genre:'indie',albums:['La malavita',"L'amore e la violenza",'El Galactico'],source:'https://www.universalmusic.it/popular-music/album/el-galactico_37919256468/'},
+ {name:'Modà',spotifyId:'3ALm6zJLaJMWV0r89kuYtu',genre:'pop',albums:['Gioia...non è mai abbastanza!','Viva i romantici']},
+ {name:'The Kolors',genre:'pop',spotifyId:'72A0Z8q8NiochyK9gUHpCR',albums:[],allow:['ITALODISCO','KARMA','UN RAGAZZO UNA RAGAZZA',"TU CON CHI FAI L’AMORE",'Frida (mai, mai, mai)','Pensare male','Non è vero','Cabriolet Panorama','Everytime','Me minus you'],exclude:['Everytime','Me minus you'],source:'https://www.warnermusic.it/artist/the-kolors/'},
+ {name:'Negramaro',spotifyId:'1X9iZlQXfAAx4Vvmlqeao7',genre:'rock',albums:['La finestra','Mentre tutto scorre']},
+ {name:'Le Vibrazioni',spotifyId:'3J3PdLj6v1uAs1mWKpzZbX',genre:'rock',albums:['Le Vibrazioni','Le Vibrazioni II']},
+ {name:'Pooh',spotifyId:'6dmT9Ks01aMhsYEKitt5oR',genre:'classics',albums:['Parsifal','Un po’ del nostro tempo migliore','Boomerang']},
+ {name:'Ricchi E Poveri',spotifyId:'5BwOOeKayeMZXa5SSaiRxv',genre:'classics',albums:['E penso a te','Mamma Maria']},
+ {name:'Tiromancino',spotifyId:'6hVfhenDWtc36gNLmWIRG5',genre:'indie',albums:['La descrizione di un attimo','In continuo movimento']},
+ {name:'Nomadi',spotifyId:'2tk9K5rmPe05JFOzxbkfN9',genre:'classics',albums:['Solo Nomadi','Ancora Nomadi','Gente come noi','La Settima Onda','Contro']},
+ {name:'Lùnapop',spotifyId:'4ZbsxiS90Pj1gLeDv3A9mN',genre:'pop',albums:['...Squérez?']},
+ {name:'883',spotifyId:'6bMul6rmRS03x38tWKYifO',genre:'pop',albums:['Hanno ucciso l’uomo ragno','La donna il sogno & il grande incubo','Nord sud ovest est']},
+ {name:'Stadio',spotifyId:'4zf0kIjnzqjWlI3Eaw5VlA',genre:'classics',albums:['Stadio','Di volpi, di vizi e di virtù','La faccia delle donne']},
+ {name:'Matia Bazar',spotifyId:'449mAbddAC2PAgNM3TLyc5',genre:'classics',albums:['Tango','Melanchólia']},
+ {name:'Zero Assoluto',spotifyId:'3bf7Y2it29DeOjXpIibCOe',genre:'pop',albums:['Sotto una pioggia di parole','Appena prima di partire']},
+];

@@ -1,0 +1,17 @@
+# Local band catalog expansion
+
+The current private local library has 300 recordings from 33 artists. This expansion added 179 songs across 17 bands: Måneskin, Pinguini Tattici Nucleari, Negrita, Baustelle, Modà, The Kolors, Negramaro, Le Vibrazioni, Pooh, Ricchi E Poveri, Tiromancino, Nomadi, Lùnapop, 883, Stadio, Matia Bazar, and Zero Assoluto.
+
+`scripts/band-seeds.mjs` contains editorial album selections and resolved artist identities. Official Sony, Warner, Universal, and artist discography pages corroborate the featured identities/albums. Spotify resolves exact album tracks and provides playback mappings; its audio and listening history are not downloaded or analyzed. Genre tags are editorial.
+
+Run `node scripts/expand-band-catalog.mjs` from this configured checkout with Spotify connected locally. The command requests serial metadata, respects cooldowns, and checkpoints under ignored `.sites-runtime/expansion`. It does not publish automatically. Inspect `catalog.sql`, then apply it with local Wrangler D1 execution using `--local --persist-to .wrangler/state --config dist/server/wrangler.json`. Apply `lyrics.sql` afterward. Never apply these files remotely.
+
+The importer distributes selections across artists until the enabled library reaches 300, deduplicating against existing recordings by ISRC and normalized artist/title. Stable independent recording IDs preserve vocabulary links on reruns. Curated remasters of older studio albums are accepted, while live, remix, karaoke, acoustic, foreign-language variants, and instrumental candidates stay out. Exact artist identities and selected albums prevent unrelated namesakes from entering the pool. Måneskin uses an explicit Italian-song allowlist; The Kolors uses selected Italian singles instead of its English albums.
+
+Language status follows the owner's existing authorization for prototype auto-approval. Reviews record `languageAssumed:true`, `languageVerified:false`, and `listenedEntireRecording:false`. Available independently sourced LRCLIB text is screened with a deterministic language detector to reject obvious foreign-language candidates; this heuristic cannot establish Italian throughout or identify every mixed-language passage/dialect. Missing lyric evidence does not fabricate a language verification or a learning package. This expansion is not formal manual acceptance of the original long-session beta gate.
+
+LRCLIB matches require exact normalized title/artist and recording duration within two seconds. Valid synchronized packages are cached separately; missing, ambiguous, or malformed packages remain listening-only. Current coverage is 233 synchronized songs and 67 listening-only songs. All 7,152 distinct lyric lines in those packages have nonempty English results in the persistent local cache. Run `node scripts/warm-translations.mjs` to populate the existing local LibreTranslate cache; reruns reuse whole-line results. Lyrics, translations, OAuth credentials, and downloaded provider metadata remain outside Git.
+
+Validation: all 15 feed pages returned 300 unique recordings and 33 artist identities; the CORALINE endpoint returned synchronized lyrics and ready translations. All 48 Node tests passed, including band allowlists, artist identity checks, studio-version filters, and reissue deduplication. Playback of all 300 recordings and community timing accuracy have not been manually checked.
+
+No hosted release, paid account, infrastructure upgrade, or scheduled importer was created.

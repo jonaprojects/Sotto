@@ -31,12 +31,39 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 .dev.vars*
+.envrc
+*.local.env
+
+# Private credentials and signing keys
+.secrets/
+.aws/
+credentials*.json
+service-account*.json
+*.key
+*.p12
+*.pfx
+*.keystore
+id_rsa
+id_ed25519
+
+# Local database contents and logs may contain account data
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+*.db-wal
+*.db-shm
+*.log
 
 # vercel
 .vercel
 
 # typescript
 next-env.d.ts
+*.tsbuildinfo
 /dist/
 /.wrangler/
 # Checkout-local execution profile and tool state; never publish them.
@@ -45,3 +72,4 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+__pycache__/

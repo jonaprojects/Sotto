@@ -1,6 +1,8 @@
 import { env } from 'cloudflare:workers';
 import { getChatGPTUser } from '../app/chatgpt-auth';
 export type BetaConfig = {
+    LOCAL_TRANSLATION_URL?: string;
+    LRCLIB_ENABLED?: string;
     SPOTIFY_CLIENT_ID?: string;
     SPOTIFY_TOKEN_KEY?: string;
     SPOTIFY_POLICY_APPROVED?: string;

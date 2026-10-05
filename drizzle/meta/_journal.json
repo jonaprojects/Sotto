@@ -15,6 +15,20 @@
       "when": 1791114853700,
       "tag": "0001_short_kulan_gath",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791120000000,
+      "tag": "0002_provider_lyrics",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791137049717,
+      "tag": "0003_word_learning",
+      "breakpoints": true
     }
   ]
 }

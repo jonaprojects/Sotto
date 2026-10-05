@@ -13,6 +13,7 @@ export type PlaybackState = {
     artist: string | null;
 };
 export interface PlaybackAdapter {
+    select(recording: Recording): void;
     connect(): Promise<void>;
     play(recording: Recording): Promise<void>;
     pause(): Promise<void>;
@@ -66,6 +67,7 @@ declare global {
     }
 }
 let sdkPromise: Promise<void> | null = null;
+const emptyPlaybackList = (message: string) => /no list was loaded/i.test(message);
 function loadSdk() { if (window.Spotify)
     return Promise.resolve(); if (!sdkPromise)
     sdkPromise = new Promise<void>((resolve, reject) => { const timer = setTimeout(() => { sdkPromise = null; reject(new Error('Spotify player did not load. Try an external supported browser.')); }, 15000); window.onSpotifyWebPlaybackSDKReady = () => { clearTimeout(timer); resolve(); }; let script = document.querySelector<HTMLScriptElement>('script[data-sotto-spotify]'); if (!script) {
@@ -77,6 +79,9 @@ function loadSdk() { if (window.Spotify)
     } script.onerror = () => { clearTimeout(timer); script?.remove(); sdkPromise = null; reject(new Error('Spotify player could not load. Check your connection.')); }; }); return sdkPromise; }
 export class SpotifyPlayback implements PlaybackAdapter {
     private retryAt = 0;
+    private volume = .8;
+    private volumeSequence = 0;
+    private volumeQueue: Promise<void> = Promise.resolve();
     private quotaExhausted = false;
     private sdk: SdkPlayer | null = null;
     private device: string | null = null;
@@ -88,8 +93,10 @@ export class SpotifyPlayback implements PlaybackAdapter {
     private observedAt = 0;
     private basePosition = 0;
     private desiredUri: string | null = null;
+    private selectedRecording: Recording | null = null;
     private disposed = false;
     private switching = false;
+    private pausing = false;
     private switchTimer: ReturnType<typeof setTimeout> | null = null;
     private state: PlaybackState = { positionMs: 0, durationMs: 0, paused: true, buffering: false, ready: false, uri: null, ended: false, error: null, image: null, title: null, artist: null };
     subscribe(listener: (s: PlaybackState) => void) { this.listeners.add(listener); listener(this.state); return () => { this.listeners.delete(listener); }; }
@@ -106,56 +113,81 @@ export class SpotifyPlayback implements PlaybackAdapter {
         await loadSdk();
         if (this.disposed)
             throw new Error('Player closed.');
-        this.sdk = new window.Spotify!.Player({ name: 'Sotto · Italian discovery', volume: .8, getOAuthToken: cb => { fetch('/api/spotify/token', { cache: 'no-store' }).then(async (r) => { const p: any = await r.json(); if (!r.ok)
+        this.sdk = new window.Spotify!.Player({ name: 'Sotto · Italian discovery', volume: this.volume, getOAuthToken: cb => { fetch('/api/spotify/token', { cache: 'no-store' }).then(async (r) => { const p: any = await r.json(); if (!r.ok)
                 throw new Error(p.error); cb(p.accessToken); }).catch(e => this.emit({ error: e.message, paused: true, ready: false })); } });
         const ready = new Promise<void>((resolve, reject) => { const timeout = setTimeout(() => reject(new Error('Spotify did not connect. Check the developer app allowlist and Premium.')), 20000); this.sdk!.addListener('ready', ({ device_id }) => { clearTimeout(timeout); this.device = device_id; this.emit({ ready: true, error: null }); resolve(); }); for (const event of ['initialization_error', 'authentication_error', 'account_error', 'playback_error'])
-            this.sdk!.addListener(event, () => { clearTimeout(timeout); const message = event === 'account_error' ? 'Spotify Premium is required.' : event === 'initialization_error' ? 'Spotify playback is unsupported here. Open Sotto in Chrome, Edge, Firefox or Safari.' : 'Spotify player could not continue. Reconnect and try again.'; this.emit({ error: message, paused: true, ready: false }); reject(new Error(message)); }); });
+            this.sdk!.addListener(event, (detail: { message?: string }) => {
+                // Device registration and transferring playback do not load a track list.
+                // An empty-list event here must not cancel the Web API track load.
+                if (event === 'playback_error' && emptyPlaybackList(detail?.message || '') && (this.pausing || this.switching || !this.state.uri)) return;
+                clearTimeout(timeout);
+                const message = event === 'account_error' ? 'Spotify Premium is required.' : event === 'initialization_error' ? 'Spotify playback is unsupported here. Open Sotto in Chrome, Edge, Firefox or Safari.' : event === 'playback_error' ? 'Spotify could not play this song. Tap Play to retry.' : 'Reconnect your Spotify account and try again.';
+                const reason = detail?.message ? message + ' ' + detail.message.slice(0, 300) : message;
+                if (event !== 'playback_error') { this.connected = null; this.device = null; }
+                this.emit({ error: reason, paused: true, buffering: false, ready: event === 'playback_error' && !!this.device });
+                reject(new Error(reason));
+            }); });
         this.sdk.addListener('not_ready', () => { this.device = null; this.connected = null; this.emit({ ready: false, paused: true, buffering: false, error: 'Spotify device disconnected. Tap Play to reconnect.' }); });
-        this.sdk.addListener('autoplay_failed', () => this.emit({ paused: true, buffering: false, error: 'Tap Play to allow audio in this browser.' }));
-        this.sdk.addListener('player_state_changed', (s: SdkState | null) => { if (!s) {
+        this.sdk.addListener('autoplay_failed', () => this.emit({ paused: true, buffering: false, error: 'Tap Play again to enable audio in this browser.' }));
+        const observe = (s: SdkState | null) => { if (!s) {
             this.emit({ paused: true, buffering: false });
             return;
         } const track = s.track_window.current_track; const was = this.state; if (this.desiredUri && track.uri !== this.desiredUri) {
-            if (this.switching)
+            if (this.switching || this.state.uri === null)
                 return;
             void this.sdk?.pause();
             this.emit({ paused: true, buffering: false, error: 'Playback moved to another recording or device. Tap Play to return to this song.' });
             return;
-        } this.switching = false; if (this.switchTimer)
-            clearTimeout(this.switchTimer); this.switchTimer = null; this.basePosition = s.position; this.observedAt = performance.now(); this.emit({ positionMs: s.position, durationMs: s.duration, paused: s.paused, buffering: s.loading, uri: track.uri, image: track.album.images[0]?.url || null, title: track.name, artist: track.artists.map(a => a.name).join(', '), error: null, ended: s.paused && s.position === 0 && was.uri === track.uri && was.positionMs > Math.max(0, was.durationMs - 2000) }); });
+        } if (!s.paused) this.switching = false; if (!s.paused && this.switchTimer) {
+            clearTimeout(this.switchTimer); this.switchTimer = null; } this.basePosition = s.position; this.observedAt = performance.now(); this.emit({ ready: !!this.device, positionMs: s.position, durationMs: s.duration, paused: s.paused, buffering: s.loading, uri: track.uri, image: track.album.images[0]?.url || null, title: track.name, artist: track.artists.map(a => a.name).join(', '), error: s.paused ? was.error : null, ended: s.paused && s.position === 0 && was.uri === track.uri && was.positionMs > Math.max(0, was.durationMs - 2000) }); };
+        this.sdk.addListener('player_state_changed', observe);
         if (!await this.sdk.connect())
             throw new Error('Spotify could not connect.');
         await ready;
         if (this.disposed)
             throw new Error('Player closed.');
+        this.emit({ ready: true, error: null });
         this.timer = setInterval(() => { if (!this.state.paused && !this.state.buffering && this.state.ready) {
             const position = Math.min(this.state.durationMs, this.basePosition + performance.now() - this.observedAt);
             this.emit({ positionMs: position, ...(position >= this.state.durationMs && this.state.durationMs > 0 ? { paused: true, ended: true } : {}) });
         } }, 250);
     }
+    select(recording: Recording) {
+        ++this.sequence;
+        this.selectedRecording = recording;
+        this.desiredUri = recording.spotifyUri;
+        this.basePosition = 0;
+        this.observedAt = performance.now();
+        this.emit({ positionMs: 0, durationMs: recording.durationMs, uri: null, paused: true, buffering: false, ended: false, error: null, image: null, title: null, artist: null });
+    }
     async play(recording: Recording) {
+        this.select(recording);
         const request = ++this.sequence;
         this.desiredUri = recording.spotifyUri;
         this.switching = true;
         if (this.switchTimer)
             clearTimeout(this.switchTimer);
-        this.switchTimer = setTimeout(() => { if (request === this.sequence) {
+        this.switchTimer = setTimeout(() => { if (request === this.sequence && this.switching) {
             this.switching = false;
             this.emit({ paused: true, buffering: false, error: 'Spotify did not start this recording. Tap Play to retry.' });
         } }, 20000);
         this.emit({ buffering: true, error: null, positionMs: 0, ended: false });
-        if (this.sdk)
-            await this.sdk.activateElement();
-        await this.connect();
+        try {
+            if (this.sdk)
+                await this.sdk.activateElement();
+            await this.connect();
         if (request !== this.sequence || this.disposed)
             return;
         await this.sdk!.activateElement();
         const run = async () => { if (request !== this.sequence || this.disposed)
             return; await this.command({ command: 'transfer' }); if (request !== this.sequence || this.disposed)
-            return; await this.command({ command: 'play', recordingId: recording.id }); };
+            return; await this.command({ command: 'play', recordingId: recording.id });
+            if (request !== this.sequence || this.disposed) return;
+            // Web API play loads and starts the recording. A second SDK resume here
+            // can race the queue load, even after the Web API returns success.
+        };
         const next = this.commandQueue.catch(() => { }).then(run);
         this.commandQueue = next;
-        try {
             await next;
         }
         catch (e) {
@@ -177,12 +209,47 @@ export class SpotifyPlayback implements PlaybackAdapter {
         else if (res.status === 429) this.retryAt = Date.now() + Math.max(1, Number(res.headers.get('Retry-After') || 30))*1000;
         throw new Error(p.error || 'Spotify playback failed.');
     } }
-    async pause() { ++this.sequence; this.switching = false; if (this.switchTimer)
-        clearTimeout(this.switchTimer); await this.sdk?.pause(); this.emit({ paused: true, buffering: false }); }
+    async pause() {
+        ++this.sequence; this.switching = false;
+        if (this.switchTimer) clearTimeout(this.switchTimer);
+        if (this.sdk && this.device) {
+            const current = await this.sdk.getCurrentState();
+            if (current && !current.paused) {
+                this.pausing = true;
+                try { await this.sdk.pause(); }
+                catch (e) { if (!emptyPlaybackList(e instanceof Error ? e.message : String(e))) throw e; }
+                finally { this.pausing = false; }
+            }
+        }
+        this.emit({ paused: true, buffering: false });
+    }
     async resume() { if (!this.sdk || !this.state.ready)
-        throw new Error('Reconnect the player first.'); await this.sdk.activateElement(); await this.sdk.resume(); }
-    async seek(ms: number) { const value = Math.max(0, Math.min(this.state.durationMs, ms)); await this.sdk?.seek(value); this.basePosition = value; this.observedAt = performance.now(); this.emit({ positionMs: value }); }
-    async setVolume(volume: number) { await this.sdk?.setVolume(Math.max(0, Math.min(1, volume))); }
+        throw new Error('Reconnect the player first.');
+        await this.sdk.activateElement();
+        const current = await this.sdk.getCurrentState();
+        if (!current || current.track_window.current_track.uri !== this.desiredUri) {
+            if (!this.selectedRecording) throw new Error('Select a song and tap Play first.');
+            return this.play(this.selectedRecording);
+        }
+        try { await this.sdk.resume(); }
+        catch (e) { if (this.selectedRecording && emptyPlaybackList(e instanceof Error ? e.message : String(e))) return this.play(this.selectedRecording); throw e; }
+    }
+    async seek(ms: number) {
+        const current = await this.sdk?.getCurrentState();
+        if (!current || current.track_window.current_track.uri !== this.desiredUri) throw new Error('Tap Play to load this song before seeking.');
+        const value = Math.max(0, Math.min(current.duration, ms));
+        await this.sdk!.seek(value); this.basePosition = value; this.observedAt = performance.now(); this.emit({ positionMs: value });
+    }
+    async setVolume(volume: number) {
+        if (!Number.isFinite(volume)) throw new Error('Choose a valid volume.');
+        this.volume = Math.max(0, Math.min(1, volume));
+        const sequence = ++this.volumeSequence;
+        const command = this.volumeQueue.catch(() => {}).then(async () => {
+            if (sequence === this.volumeSequence) await this.sdk?.setVolume(this.volume);
+        });
+        this.volumeQueue = command;
+        await command;
+    }
     disconnect() { this.disposed = true; this.switching = false; if (this.switchTimer)
         clearTimeout(this.switchTimer); this.switchTimer = null; ++this.sequence; this.sdk?.disconnect(); this.sdk = null; this.device = null; this.connected = null; if (this.timer)
         clearInterval(this.timer); this.timer = null; this.emit({ paused: true, buffering: false, ready: false }); }

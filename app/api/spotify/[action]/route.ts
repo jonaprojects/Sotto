@@ -61,7 +61,7 @@ export async function POST(request: Request, { params }: Context) {
                 if (typeof p.recordingId !== 'string')
                     throw new ApiError(400, 'INVALID_RECORDING', 'Select a recording.');
                 const recording = await approvedRecording(p.recordingId);
-                await spotifyRequest(u.userId, `/me/player/play?device_id=${encodeURIComponent(p.deviceId)}`, { uris: [recording.spotifyUri] });
+                await spotifyRequest(u.userId, `/me/player/play?device_id=${encodeURIComponent(p.deviceId)}`, { uris: [recording.spotifyUri], position_ms: 0 });
             }
             else
                 throw new ApiError(400, 'INVALID_COMMAND', 'Invalid playback command.');

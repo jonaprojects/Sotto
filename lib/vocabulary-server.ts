@@ -3,7 +3,9 @@ import { db } from './beta-server';
 import { learning } from './beta-catalog';
 import type { Sense } from './discovery';
 export async function senseFor(id: string): Promise<Sense | null> { if (words[id])
-    return words[id]; const alias = await db().prepare('SELECT s.* FROM word_senses s JOIN word_aliases a ON a.sense_id=s.id WHERE s.id=?').bind(id).first<Sense>(); if (alias)
+    return words[id];
+    if (id.startsWith('lw:')) return db().prepare('SELECT id,text,translation,lemma,grammar FROM provider_word_senses WHERE id=?').bind(id).first<Sense>();
+    const alias = await db().prepare('SELECT s.* FROM word_senses s JOIN word_aliases a ON a.sense_id=s.id WHERE s.id=?').bind(id).first<Sense>(); if (alias)
     return alias; const packages = await db().prepare('SELECT DISTINCT p.recording_id FROM word_occurrences o JOIN lyric_lines l ON l.id=o.line_id JOIN learning_packages p ON p.id=l.package_id WHERE o.sense_id=? AND p.approved=1').bind(id).all<{
     recording_id: string;
 }>(); for (const p of packages.results) {
